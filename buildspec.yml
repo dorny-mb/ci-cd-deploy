@@ -1,0 +1,16 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - aws --region $DEFAULT_REGION ecr get-login-password | docker login --username AWS --password-stdin $ECR_REPO_URI
+    build:
+      commands:
+        - docker build -f Dockerfile -t $ECR_REPO_NAME .
+        - docker tag $ECR_REPO_NAME:latest $ECR_REPO_URI:latest
+    post_build:
+      commands:
+        - docker push $ECR_REPO_URI:latest
+        - printf '[{"name": $TASK_DEFINITION_NAME, "imageUri":"%s"}]' $ECR_REPO_URI > image-definitions.json
+    artifacts:
+      files: image-definitions.json
